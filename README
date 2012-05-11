@@ -1,0 +1,2 @@
+A better way to get MasterServer's info as for clients as for MasterServer itself (decreased load)
+Client gets data only if there is a change in games
