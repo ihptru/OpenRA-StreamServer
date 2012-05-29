@@ -17,7 +17,7 @@ class Pinger:
     def pinger(self):
         url = 'http://master.open-ra.org/list_json.php'
         while self.stop_thread == [0]:
-            time.sleep(5)
+            time.sleep(3)
             self.lock.pop(0)
             self.lock.append(1)
             try:
@@ -99,6 +99,7 @@ class Client:
                         return
 
 if __name__ == "__main__":
+    print("Starting Stream Server...")
     network = socket.socket ( socket.AF_INET, socket.SOCK_STREAM )
     network.bind(("",  33322))
 
@@ -122,6 +123,8 @@ if __name__ == "__main__":
             cl.stop_thread = [1]    #close works with clients
         pinger.stop_thread = [1]    #stop pinger thread
         network.close()
+        print("*** Server is stopped ***")
         exit(1)
     network.close()
+    print("*** Server is stopped ***")
     exit(0)
