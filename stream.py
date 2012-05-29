@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+#
+# Server port: 33322
 
 import urllib.request
 import json
@@ -51,6 +53,7 @@ class Client:
             if self.stop_thread == [1]:
                 break
             current_state = self.games[:]
+            #length of current local list and a new list is different
             if len(state) != len(current_state):
                 state = current_state[:]
                 try:
@@ -65,15 +68,17 @@ class Client:
                 found = False
                 break_loops = False
                 for master in current_state:
-                    if game["id"] == master["id"]:
+                    # `address` is a unique field
+                    if game["address"] == master["address"]:
                         found = True
-                        keys = ['map', 'mods', 'name', 'address', 'players', 'state']
+                        keys = ['map', 'mods', 'name', 'players', 'state']
                         for key in keys:
                             if game[key] != master[key]:
                                 state = current_state[:]
                                 try:
-                                    print("found difference in one of games")
+                                    # found difference in one of games
                                     sock.send(str(state).encode())
+                                    # get out of a tree of loops (we already sent a new state to client)
                                     break_loops = True
                                     break
                                 except:
@@ -83,10 +88,10 @@ class Client:
                             break
                 if break_loops:
                     break
+                # current checked local game is not found in master server list
                 if not found:
                     state = current_state[:]
                     try:
-                        print("game not found")
                         sock.send(str(state).encode())
                         break
                     except:
