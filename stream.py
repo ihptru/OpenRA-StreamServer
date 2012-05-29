@@ -35,17 +35,19 @@ class Pinger:
                 continue                
 
 class Client:
-    def __init__(self, pinger_data, lock):
+    def __init__(self, pinger_data, lock, clients):
         self.games = pinger_data
         self.lock = lock
         self.stop_thread = [0]
+        self.clients = clients
 
     def work_with_client(self, sock, addr):
         state = self.games[:]
         try:
             sock.send(str(state).encode())
         except:
-            print("Broken connection:", addr[0]+":"+str(addr[1]))
+            self.clients.remove(self)
+            print("Broken connection:", addr[0]+":"+str(addr[1]), "["+str(len(self.clients))+" clients connected]")
             return
         while True:
             while self.lock == [1]:
@@ -59,7 +61,8 @@ class Client:
                 try:
                     sock.send(str(state).encode())
                 except:
-                    print("Broken connection:", addr[0]+":"+str(addr[1]))
+                    self.clients.remove(self)
+                    print("Broken connection:", addr[0]+":"+str(addr[1]), "["+str(len(self.clients))+" clients connected]")
                     return
                 continue
             # if length is unchanged, then previous state must contain at least one item which is not in current state ( in case that there is a difference )
@@ -82,7 +85,8 @@ class Client:
                                     break_loops = True
                                     break
                                 except:
-                                    print("Broken connection:", addr[0]+":"+str(addr[1]))
+                                    self.clients.remove(self)
+                                    print("Broken connection:", addr[0]+":"+str(addr[1]), "["+str(len(self.clients))+" clients connected]")
                                     return
                         if break_loops:
                             break
@@ -95,7 +99,9 @@ class Client:
                         sock.send(str(state).encode())
                         break
                     except:
-                        print("Broken connection:", addr[0]+":"+str(addr[1]))
+                        self.clients.remove(self)
+                        print("Broken connection:", addr[0]+":"+str(addr[1]), "["+str(len(self.clients))+" clients connected]")
+                        clients
                         return
 
 if __name__ == "__main__":
@@ -112,19 +118,17 @@ if __name__ == "__main__":
         while True:
             network.listen(1)
             sock, addr = network.accept()   #a new client connected
-            print("Connected:", addr[0]+":"+str(addr[1]))
-            client = Client(pinger.data_json, pinger.lock)  #share a list of games and lock state with client (lock is required when Pinger modifies list of games)
+            client = Client(pinger.data_json, pinger.lock, clients)  #share a list of games and lock state with client (lock is required when Pinger modifies list of games)
             client_thread = threading.Thread(target=client.work_with_client,  args=(sock, addr, ))
             client_thread.start()
             clients.append(client)
+            print("Connected:", addr[0]+":"+str(addr[1]), "["+str(len(clients))+" clients connected]")
     except KeyboardInterrupt as e:
         print("*** Stopping Threads... ***")
         for cl in clients:
             cl.stop_thread = [1]    #close works with clients
         pinger.stop_thread = [1]    #stop pinger thread
         network.close()
-        print("*** Server is stopped ***")
         exit(1)
     network.close()
-    print("*** Server is stopped ***")
     exit(0)
